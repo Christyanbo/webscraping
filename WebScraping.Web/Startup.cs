@@ -14,12 +14,15 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerUI;
+using WebScraping.Infrastructure.Data;
+using WebScraping.Infrastructure.Repository;
 
 namespace WebScraping.Web
 {
@@ -36,6 +39,12 @@ namespace WebScraping.Web
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
+            
+            var connection = Configuration["ConexaoMySql:MySqlConnectionString"];
+            
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseMySql(connection)
+            );
             
             var assembly = AppDomain.CurrentDomain.Load("WebScraping.Core");
             services.AddMediatR(assembly);
@@ -100,7 +109,9 @@ namespace WebScraping.Web
             builder.Populate(services);
 
             var webAssembly = Assembly.GetExecutingAssembly();
-            builder.RegisterAssemblyTypes(webAssembly).AsImplementedInterfaces();
+            var empresaRepositoryAssembly = Assembly.GetAssembly(typeof(FileInformationRepository));
+          
+            builder.RegisterAssemblyTypes(webAssembly, empresaRepositoryAssembly).AsImplementedInterfaces();
 
             var applicationContainer = builder.Build();
 
